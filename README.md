@@ -1,16 +1,35 @@
-# VisionEye – AI Image OSINT Tool
+# 👁️ VisionEye – AI Image OSINT
 
 **See Beyond. Know Everything.**
 
-VisionEye is a free, open‑source intelligence (OSINT) tool that extracts hidden information from images.  
-Upload any image and instantly get:
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-green.svg)](https://fastapi.tiangolo.com/)
+[![Contributors](https://img.shields.io/badge/Contributors-2-brightgreen.svg)](https://github.com/Swapnil0x17/VisionEye/graphs/contributors)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-- 🧠 **AI Reasoning** – clean, factual description.
-- 📝 **Smart OCR** – text extraction with bounding‑box coordinates.
-- 📸 **EXIF Metadata** – camera, GPS, date, ISO, aperture.
-- 🗺️ **GPS to Location** – city/country via OpenStreetMap.
-- 🌍 **Possible Locations** – AI‑guessed places (even without EXIF).
-- 🔍 **Reverse Image Search** – Google Lens, TinEye, Yandex, Bing.
+**VisionEye** is a free, open‑source intelligence (OSINT) tool that extracts hidden information from images – just upload and explore.
+
+---
+
+## 📸 Dashboard Preview
+
+![VisionEye UI](screenshot.png)
+
+> *Upload an image and instantly see AI reasoning, OCR, EXIF, GPS location, and reverse search results.*
+
+---
+
+## ⚡ Features
+
+| Feature | Description |
+|---------|-------------|
+| 🧠 **AI Reasoning** | Clean, factual description of the image content |
+| 📝 **Smart OCR** | Text extraction with precise bounding‑box coordinates |
+| 📸 **EXIF Metadata** | Camera, GPS, date, ISO, aperture, shutter speed |
+| 🗺️ **GPS to Location** | City/country via OpenStreetMap reverse geocoding |
+| 🌍 **Possible Locations** | AI‑guessed places even when EXIF is missing |
+| 🔍 **Reverse Image Search** | One‑click Google Lens, TinEye, Yandex, Bing |
 
 ---
 
@@ -19,40 +38,28 @@ Upload any image and instantly get:
 - **Backend:** FastAPI (Python)
 - **OCR:** Tesseract
 - **AI:** Groq (Qwen vision model)
-- **Frontend:** HTML5, CSS3, JavaScript
-- **Hosting:** Local or deploy anywhere (Fly.io, Render, Railway)
+- **Frontend:** HTML5, CSS3, JavaScript (single‑page app)
+- **Hosting:** Local / Fly.io / Render / Railway
 
 ---
 
 ## 🚀 Quick Start (Local)
 
-1. Clone the repository  
-   `git clone https://github.com/Swapnil0x17/VisionEye.git`
-2. Create a virtual environment  
-   `python -m venv venv`
-3. Activate it (Windows)  
-   `venv\Scripts\Activate.ps1`
-4. Install dependencies  
-   `pip install -r requirements.txt`
-5. Set your Groq API key in `.env` (see above)
-6. Place Tesseract in `./tesseract` or install system‑wide
-7. Run the server  
-   `uvicorn main:app --host 127.0.0.1 --port 8000 --reload`
-8. Open `http://127.0.0.1:8000` in your browser
+```bash
+# Clone the repository
+git clone https://github.com/Swapnil0x17/VisionEye.git
+cd VisionEye
 
----
+# Create and activate virtual environment
+python -m venv venv
+venv\Scripts\Activate.ps1   # Windows
+# source venv/bin/activate   # Linux/macOS
 
-## 👨‍💻 Contributors
+# Install dependencies
+pip install -r requirements.txt
 
-- **Swapnil** ([@Swapnil0x17](https://github.com/Swapnil0x17)) – Backend, AI integration, OCR, API
-- **Hasan Ahmed** ([@Iamhasan69](https://github.com/Iamhasan69)) – Frontend, UI/UX, Testing, Design
+# Create .env file with your Groq API key
+echo "GROQ_API_KEY=your_key_here" > .env
 
----
-
-## 📜 License
-
-MIT – Free for everyone.
-
----
-
-**Made ❤️ by Swapnil & Hasan**
+# Run the server
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
