@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VisionEye · AI Image OSINT</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+
+    <style>
+        /* ============================================================
+           ROOT & RESET
+           ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #080d17;
+            --bg-card: #0d1625;
+            --bg-card2: #111d2e;
+            --border: rgba(60, 130, 200, 0.15);
+            --border-light: rgba(60, 130, 200, 0.08);
+            --text: #eaf2fa;
+            --text-muted: #889bb0;
+            --cyan: #1dd9ff;
+            --cyan-dim: rgba(29, 217, 255, 0.06);
+            --purple: #8f5bff;
+            --green: #00e893;
+            --green-dim: rgba(0, 232, 147, 0.06);
+            --yellow: #ffce4a;
+            --radius: 12px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+            background-size: 32px 32px;
+            z-index: 0;
+        }
+
+        .app {
+            max-width: 1360px;
+            width: 100%;
+            background: rgba(8, 13, 23, 0.92);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(2px);
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 28px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 12px;
+            background: rgba(8, 13, 23, 0.6);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(143, 91, 255, 0.18), rgba(29, 217, 255, 0.10));
+            border: 1px solid rgba(143, 91, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: var(--purple);
+            box-shadow: 0 0 30px rgba(143, 91, 255, 0.08);
+        }
+
+        .brand-text h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--cyan) 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: -2px;
+            letter-spacing: 0.4px;
+            font-weight: 400;
+        }
+
+        .header-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border: 1px solid rgba(0, 232, 147, 0.18);
+            border-radius: 30px;
+            background: rgba(0, 232, 147, 0.04);
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .header-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 12px rgba(0, 232, 147, 0.4);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+
+        /* ============================================================
+           MAIN LAYOUT
+           ============================================================ */
+        .main {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: 600px;
+        }
+
+        /* ============================================================
+           SIDEBAR
+           ============================================================ */
+        .sidebar {
+            border-right: 1px solid var(--border);
+            padding: 20px 14px 24px;
+            background: rgba(9, 15, 26, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .upload-area {
+            border: 1px dashed rgba(29, 217, 255, 0.25);
+            border-radius: 10px;
+            padding: 18px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: rgba(29, 217, 255, 0.03);
+        }
+
+        .upload-area:hover {
+            border-color: var(--cyan);
+            background: rgba(29, 217, 255, 0.06);
+        }
+
+        .upload-area .icon { font-size: 28px; color: var(--cyan); opacity: 0.7; }
+        .upload-area .label { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 4px; }
+        .upload-area .hint { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+        .api-key-wrap { margin-bottom: 6px; }
+        .api-key-wrap label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+        .api-key-wrap input {
+            width: 100%; padding: 8px 10px; border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 12px;
+            font-family: inherit;
+            outline: none;
+        }
+        .api-key-wrap input:focus { border-color: var(--cyan); }
+        .api-key-wrap .hint { font-size: 9px; color: var(--text-muted); margin-top: 4px; }
+        .api-key-wrap .hint a { color: var(--cyan); text-decoration: none; }
+        .api-key-wrap .hint a:hover { text-decoration: underline; }
+
+        .file-info-box {
+            background: rgba(13, 22, 37, 0.6);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 12px;
+            line-height: 1.8;
+            color: var(--text-muted);
+        }
+        .file-info-box strong { color: var(--text); font-weight: 500; }
+        .file-info-box .val { color: var(--cyan); font-weight: 500; }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+        .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+        .nav-item.active {
+            color: var(--cyan);
+            background: rgba(29,217,255,0.07);
+            box-shadow: inset 3px 0 0 var(--cyan);
+        }
+        .nav-item .ico { font-size: 17px; width: 26px; text-align: center; opacity: 0.7; }
+        .nav-item.active .ico { opacity: 1; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 18px;
+            border-top: 1px solid var(--border-light);
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.6;
+        }
+        .sidebar-footer .tag { color: var(--green); font-weight: 600; }
+
+        /* ============================================================
+           CONTENT
+           ============================================================ */
+        .content {
+            padding: 20px 24px 20px 24px;
+            min-width: 0;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            background: rgba(13, 22, 37, 0.5);
+            border: 1px solid var(--border-light);
+            margin-bottom: 20px;
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 16px rgba(0, 232, 147, 0.3);
+        }
+        .status-label { font-weight: 600; font-size: 13px; color: var(--text); }
+        .status-sub { font-size: 12px; color: var(--text-muted); }
+
+        .status-pills {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+        .pill {
+            padding: 4px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--border-light);
+            font-size: 11px;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.2);
+        }
+        .pill .num { color: var(--cyan); font-weight: 600; }
+
+        /* ============================================================
+           GRIDS
+           ============================================================ */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .full-width { grid-column: 1 / -1; }
+
+        /* ============================================================
+           CARDS
+           ============================================================ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover { border-color: rgba(60, 130, 200, 0.18); }
+
+        .card-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .card-header .ico { font-size: 18px; opacity: 0.8; }
+        .card-header .badge {
+            margin-left: auto;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 12px;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.04);
+            color: var(--text-muted);
+            border: 1px solid var(--border-light);
+        }
+
+        .card-body {
+            padding: 16px 18px 18px;
+            flex: 1;
+        }
+
+        .card-cyan .card-header { color: var(--cyan); }
+        .card-cyan .card-header .ico { color: var(--cyan); }
+        .card-purple .card-header { color: var(--purple); }
+        .card-purple .card-header .ico { color: var(--purple); }
+        .card-green .card-header { color: var(--green); }
+        .card-green .card-header .ico { color: var(--green); }
+        .card-yellow .card-header { color: var(--yellow); }
+        .card-yellow .card-header .ico { color: var(--yellow); }
+
+        /* ---- Image Stage ---- */
+        .image-stage {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1.6 / 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #060b14;
+            border: 1px solid var(--border-light);
+        }
+        .image-stage img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+            background: #0a121f;
+        }
+        .image-stage .placeholder {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            text-align: center;
+            padding: 20px;
+        }
+        .image-stage .placeholder .big { font-size: 44px; opacity: 0.25; margin-bottom: 6px; }
+        .image-stage .full-btn {
+            position: absolute;
+            left: 50%;
+            bottom: 12px;
+            transform: translateX(-50%);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: rgba(8,13,23,0.85);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .image-stage .full-btn:hover { border-color: var(--cyan); color: var(--text); }
+
+        /* ---- AI Reasoning ---- */
+        .reasoning-text {
+            font-size: 13px;
+            line-height: 1.8;
+            color: #d0dce8;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .reasoning-text::-webkit-scrollbar { width: 4px; }
+        .reasoning-text::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 10px; }
+
+        /* ---- Location Tags ---- */
+        .location-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .location-tag {
+            background: rgba(29, 217, 255, 0.12);
+            border: 1px solid rgba(29, 217, 255, 0.25);
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--cyan);
+        }
+
+        /* ---- Confidence Row ---- */
+        .confidence-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .confidence-row .label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+        .confidence-row .track { flex: 1; height: 4px; border-radius: 10px; background: rgba(255,255,255,0.06); overflow: hidden; }
+        .confidence-row .track .fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--cyan)); border-radius: 10px; transition: width 0.5s ease; }
+        .confidence-row .pct { font-weight: 700; font-size: 13px; color: var(--green); min-width: 48px; text-align: right; }
+
+        /* ---- OCR Table ---- */
+        .ocr-wrap { overflow-x: auto; }
+        .ocr-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .ocr-table th {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ocr-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            color: #d0dce8;
+        }
+        .ocr-table tr:last-child td { border-bottom: none; }
+        .ocr-table .coord { color: var(--green); font-family: 'Inter', monospace; font-size: 11px; white-space: nowrap; }
+        .ocr-table .num-col { color: var(--text-muted); font-weight: 500; width: 30px; }
+
+        /* ---- EXIF ---- */
+        .exif-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .exif-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .exif-table td {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .exif-table .label { color: var(--text-muted); font-weight: 400; width: 40%; }
+        .exif-table .value { color: #d0dce8; font-weight: 500; }
+        .exif-table .value.gps { color: var(--green); }
+
+        .exif-map {
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0d1a22;
+            border: 1px solid var(--border-light);
+            position: relative;
+            min-height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .exif-map .pin {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .exif-map .pin .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ff4d6d;
+            box-shadow: 0 0 24px rgba(255,77,109,0.35);
+        }
+        .exif-map .pin .label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.3px; }
+        .exif-map .grid-lines {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.06;
+            background-image: linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .map-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .map-btn:hover { border-color: var(--cyan); color: var(--text); }
+
+        /* ---- Reverse Search Buttons ---- */
+        .search-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .search-btn {
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .search-btn:hover {
+            border-color: var(--cyan);
+            background: rgba(29,217,255,0.06);
+            color: var(--cyan);
+        }
+        .search-btn i { font-size: 14px; }
+
+        /* ---- Footer ---- */
+        .footer {
+            margin-top: 16px;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            gap: 8px;
+        }
+        .footer .left { display: flex; align-items: center; gap: 6px; color: var(--green); }
+        .footer .center { display: flex; gap: 18px; }
+        .footer .center span { cursor: default; }
+        .footer .right { color: var(--text-muted); }
+
+        /* ---- Modal ---- */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+        .modal.show { display: flex; }
+        .modal-inner { position: relative; max-width: 92vw; max-height: 90vh; }
+        .modal-inner img { max-width: 100%; max-height: 85vh; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 0 60px rgba(0,0,0,0.8); display: block; }
+        .modal-close {
+            position: absolute;
+            right: -14px;
+            top: -14px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .modal-close:hover { border-color: var(--cyan); }
+
+        /* ---- Toast ---- */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 3000;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 13px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.35s ease;
+            backdrop-filter: blur(8px);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 1150px) {
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+            .grid-3 .card:first-child { grid-column: 1 / -1; }
+        }
+
+        @media (max-width: 900px) {
+            .main { grid-template-columns: 1fr; }
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                padding: 16px;
+            }
+            .sidebar .upload-area { grid-column: 1 / -1; }
+            .sidebar .api-key-wrap { grid-column: 1 / -1; }
+            .sidebar .file-info-box { grid-column: 1 / -1; }
+            .sidebar .nav { flex-direction: row; flex-wrap: wrap; grid-column: 1 / -1; }
+            .nav-item { flex: 1; min-width: 100px; justify-content: center; }
+            .sidebar-footer { grid-column: 1 / -1; margin-top: 0; padding-top: 12px; }
+            .exif-grid { grid-template-columns: 1fr; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: 1fr; }
+            .grid-3 .card:first-child { grid-column: auto; }
+            .status-pills { margin-left: 0; width: 100%; }
+        }
+
+        @media (max-width: 550px) {
+            body { padding: 8px; }
+            .header { padding: 14px 16px; }
+            .brand-text h1 { font-size: 18px; }
+            .content { padding: 14px 14px; }
+            .card-body { padding: 12px 12px 14px; }
+            .ocr-table { font-size: 10px; }
+            .ocr-table th, .ocr-table td { padding: 5px 6px; }
+            .footer { flex-direction: column; text-align: center; gap: 6px; }
+            .footer .center { flex-wrap: wrap; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ============================================================
+    HEADER
+    ============================================================ -->
+    <header class="header">
+        <div class="brand">
+            <div class="brand-icon">◈</div>
+            <div class="brand-text">
+                <h1>VisionEye</h1>
+                <p>See Beyond. Know Everything.</p>
+            </div>
+        </div>
+        <div class="header-badge">
+            <span class="dot"></span>
+            <span>100% FREE · FOREVER</span>
+        </div>
+    </header>
+
+    <!-- ============================================================
+    MAIN
+    ============================================================ -->
+    <div class="main">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="upload-area" id="uploadArea">
+                <div class="icon">⤴</div>
+                <div class="label">Upload Image</div>
+                <div class="hint">JPG, PNG, WebP</div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none;" />
+            </div>
+
+            <div class="api-key-wrap">
+                <label>Groq API Key <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+                <input type="password" id="groqApiKey" placeholder="gsk_..." />
+                <div class="hint">Get free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a></div>
+            </div>
+
+            <div class="file-info-box" id="fileInfo">
+                <div>File: <strong id="fileName">—</strong></div>
+                <div>Size: <strong id="fileSize">—</strong></div>
+                <div>Resolution: <strong id="fileRes">—</strong></div>
+            </div>
+
+            <nav class="nav" id="nav">
+                <button class="nav-item active" data-target="dashboard"><span class="ico">⌂</span> Dashboard</button>
+                <button class="nav-item" data-target="reasoningCard"><span class="ico">♧</span> AI Reasoning</button>
+                <button class="nav-item" data-target="ocrCard"><span class="ico">▣</span> OCR Extractor</button>
+                <button class="nav-item" data-target="exifCard"><span class="ico">▧</span> EXIF Metadata</button>
+                <button class="nav-item" data-target="reverseCard"><span class="ico">⌕</span> Reverse Search</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="tag">◆ Open Source</div>
+                <div>Made with ♥ by VisionEye</div>
+            </div>
+        </aside>
+
+        <!-- CONTENT -->
+        <main class="content" id="dashboard">
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-left">
+                    <span class="status-dot"></span>
+                    <div>
+                        <div class="status-label" id="statusLabel">Ready</div>
+                        <div class="status-sub" id="statusSub">Upload an image to begin</div>
+                    </div>
+                </div>
+                <div class="status-pills">
+                    <span class="pill">◷ <span class="num" id="timeTaken">—</span></span>
+                    <span class="pill">▣ ID: <span class="num" id="reportId">—</span></span>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            GRID 3 — Image + AI + OCR
+            ============================================================ -->
+            <div class="grid-3">
+
+                <!-- IMAGE CARD -->
+                <section class="card card-purple">
+                    <div class="card-header">
+                        <span class="ico">✣</span> UPLOADED IMAGE
+                        <span class="badge" id="imageBadge">—</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="image-stage" id="imageStage">
+                            <img id="previewImg" src="" alt="Uploaded" />
+                            <div class="placeholder" id="placeholder">
+                                <div>
+                                    <div class="big">◈</div>
+                                    <div>Upload an image</div>
+                                </div>
+                            </div>
+                            <button class="full-btn" id="fullBtn">View Full Size ⛶</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI REASONING CARD -->
+                <section class="card card-cyan" id="reasoningCard">
+                    <div class="card-header">
+                        <span class="ico">♧</span> 1. AI REASONING
+                        <span class="badge" id="reasoningBadge">—</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="reasoning-text" id="reasoningText">Awaiting analysis...</div>
+                        <div class="confidence-row">
+                            <span class="label">Confidence</span>
+                            <span class="track"><span class="fill" id="confidenceFill"></span></span>
+                            <span class="pct" id="confidencePct">—</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- OCR CARD -->
+                <section class="card card-green" id="ocrCard">
+                    <div class="card-header">
+                        <span class="ico">▣</span> 2. SMART OCR
+                        <span class="badge" id="ocrCount">0 texts</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="ocr-wrap">
+                            <table class="ocr-table">
+                                <thead><tr><th>#</th><th>Text Detected</th><th>Coordinates</th></tr></thead>
+                                <tbody id="ocrBody">
+                                    <tr><td colspan="3" style="text-align:center;color:var(--text-muted);">No text detected</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ============================================================
+            GRID 2 — EXIF + Locations
+            ============================================================ -->
+            <div class="grid-2">
+
+                <!-- EXIF CARD -->
+                <section class="card card-yellow" id="exifCard">
+                    <div class="card-header">
+                        <span class="ico">▧</span> 3. EXIF METADATA
+                        <span class="badge">12 fields</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="exif-grid">
+                            <table class="exif-table">
+                                <tbody id="exifBody">
+                                    <tr><td class="label">Camera Make</td><td class="value" id="exifMake">—</td></tr>
+                                    <tr><td class="label">Camera Model</td><td class="value" id="exifModel">—</td></tr>
+                                    <tr><td class="label">Lens Model</td><td class="value" id="exifLens">—</td></tr>
+                                    <tr><td class="label">Date &amp; Time</td><td class="value" id="exifDate">—</td></tr>
+                                    <tr><td class="label">GPS Coordinates</td><td class="value gps" id="exifGps">—</td></tr>
+                                    <tr><td class="label">Altitude</td><td class="value" id="exifAlt">—</td></tr>
+                                    <tr><td class="label">ISO</td><td class="value" id="exifIso">—</td></tr>
+                                    <tr><td class="label">Focal Length</td><td class="value" id="exifFocal">—</td></tr>
+                                    <tr><td class="label">Aperture</td><td class="value" id="exifAperture">—</td></tr>
+                                    <tr><td class="label">Shutter Speed</td><td class="value" id="exifShutter">—</td></tr>
+                                    <tr><td class="label">Image Size</td><td class="value" id="exifDim">—</td></tr>
+                                </tbody>
+                            </table>
+
+                            <div>
+                                <div class="exif-map" id="exifMap">
+                                    <div class="grid-lines"></div>
+                                    <div class="pin">
+                                        <div class="dot"></div>
+                                        <div class="label">📍 GPS DETECTED</div>
+                                    </div>
+                                </div>
+                                <button class="map-btn" id="mapBtn">Open in Google Maps ↗</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- LOCATIONS CARD -->
+                <section class="card card-purple" id="locationsCard">
+                    <div class="card-header">
+                        <span class="ico">📍</span> POSSIBLE LOCATIONS
+                        <span class="badge" id="locationsBadge">—</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="locationsContainer">
+                            <div style="color:var(--text-muted); font-size:13px;">Awaiting AI location guess...</div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ============================================================
+            REVERSE SEARCH CARD (full width)
+            ============================================================ -->
+            <section class="card" id="reverseCard" style="margin-bottom:16px;">
+                <div class="card-header" style="color:var(--cyan);">
+                    <span class="ico">⌕</span> 4. REVERSE SEARCH
+                    <span class="badge" id="reverseBadge">0 matches</span>
+                </div>
+                <div class="card-body">
+                    <div class="search-buttons" id="searchButtons">
+                        <span style="color:var(--text-muted); font-size:13px;">No search engines available yet.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FOOTER -->
+            <div class="footer">
+                <div class="left">🔒 We do not store your images.</div>
+                <div class="center"><span>&lt;/&gt; Open Source</span><span>♥ Free Forever</span></div>
+                <div class="right">Made with ♥ by VisionEye</div>
+            </div>
+
+        </main>
+
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="imageModal">
+    <div class="modal-inner">
+        <button class="modal-close" id="modalClose">✕</button>
+        <img id="modalImg" src="" alt="Full size" />
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">Ready.</div>
+
+<!-- ============================================================
+SCRIPT
+============================================================ -->
+<script>
+    (function() {
+
+        // ---- CONFIG ----
+        const BACKEND_URL = '/analyze';
+
+        // ---- DOM refs ----
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewImg = document.getElementById('previewImg');
+        const placeholder = document.getElementById('placeholder');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileRes = document.getElementById('fileRes');
+        const fullBtn = document.getElementById('fullBtn');
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImg');
+        const modalClose = document.getElementById('modalClose');
+        const toast = document.getElementById('toast');
+        const groqKeyInput = document.getElementById('groqApiKey');
+
+        // result elements
+        const statusLabel = document.getElementById('statusLabel');
+        const statusSub = document.getElementById('statusSub');
+        const timeTaken = document.getElementById('timeTaken');
+        const reportId = document.getElementById('reportId');
+        const reasoningText = document.getElementById('reasoningText');
+        const confidenceFill = document.getElementById('confidenceFill');
+        const confidencePct = document.getElementById('confidencePct');
+        const reasoningBadge = document.getElementById('reasoningBadge');
+        const ocrBody = document.getElementById('ocrBody');
+        const ocrCount = document.getElementById('ocrCount');
+        const exifMake = document.getElementById('exifMake');
+        const exifModel = document.getElementById('exifModel');
+        const exifLens = document.getElementById('exifLens');
+        const exifDate = document.getElementById('exifDate');
+        const exifGps = document.getElementById('exifGps');
+        const exifAlt = document.getElementById('exifAlt');
+        const exifIso = document.getElementById('exifIso');
+        const exifFocal = document.getElementById('exifFocal');
+        const exifAperture = document.getElementById('exifAperture');
+        const exifShutter = document.getElementById('exifShutter');
+        const exifDim = document.getElementById('exifDim');
+        const imageBadge = document.getElementById('imageBadge');
+        const reverseBadge = document.getElementById('reverseBadge');
+        const mapBtn = document.getElementById('mapBtn');
+        const searchButtons = document.getElementById('searchButtons');
+        const locationsContainer = document.getElementById('locationsContainer');
+        const locationsBadge = document.getElementById('locationsBadge');
+
+        let toastTimer = null;
+        let currentFile = null;
+
+        // ---- toast ----
+        function showToast(msg, isError = false) {
+            toast.textContent = msg;
+            toast.style.borderColor = isError ? '#ff4d6d' : 'var(--border)';
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // ---- status update ----
+        function setStatus(label, sub) {
+            statusLabel.textContent = label;
+            statusSub.textContent = sub;
+        }
+
+        // ---- process file ----
+        function processFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('Please select a valid image.', true);
+                return;
+            }
+
+            currentFile = file;
+            const url = URL.createObjectURL(file);
+
+            previewImg.src = url;
+            previewImg.style.display = 'block';
+            placeholder.style.display = 'none';
+            fileName.textContent = file.name;
+            fileSize.textContent = formatBytes(file.size);
+
+            const img = new Image();
+            img.onload = function() {
+                const dim = img.naturalWidth + ' × ' + img.naturalHeight;
+                fileRes.textContent = dim;
+                exifDim.textContent = dim;
+                imageBadge.textContent = dim;
+                URL.revokeObjectURL(url);
+                sendToBackend(file);
+            };
+            img.onerror = function() { showToast('Could not load image details.', true); };
+            img.src = url;
+        }
+
+        // ---- send to backend ----
+        async function sendToBackend(file) {
+            setStatus('Analyzing...', 'Sending to AI engine');
+
+            const groqKey = groqKeyInput.value.trim();
+            const formData = new FormData();
+            formData.append('file', file);
+            if (groqKey) {
+                formData.append('groq_api_key', groqKey);
+            }
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    body: formData,
+                    signal: AbortSignal.timeout(60000)
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                timeTaken.textContent = elapsed + 's';
+                reportId.textContent = 'VEYE-' + Date.now().toString().slice(-8);
+
+                if (data.success) {
+                    setStatus('Analysis Complete', 'All 4 Pillars Extracted');
+
+                    // ---- AI Reasoning (clean summary) ----
+                    const summary = data.summary || 'No summary available.';
+                    reasoningText.innerHTML = summary;
+                    const conf = Math.min(95 + (data.ocr ? Math.min(data.ocr.length * 1.5, 5) : 0), 99);
+                    confidenceFill.style.width = conf + '%';
+                    confidencePct.textContent = conf + '%';
+                    reasoningBadge.textContent = conf + '%';
+
+                    // ---- Possible Locations ----
+                    const locations = data.locations || [];
+                    locationsContainer.innerHTML = '';
+                    if (locations.length === 0) {
+                        locationsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">No location guessed by AI.</div>';
+                        locationsBadge.textContent = '0';
+                    } else {
+                        const tags = document.createElement('div');
+                        tags.className = 'location-tags';
+                        locations.forEach(loc => {
+                            const tag = document.createElement('span');
+                            tag.className = 'location-tag';
+                            tag.textContent = loc;
+                            tags.appendChild(tag);
+                        });
+                        locationsContainer.appendChild(tags);
+                        locationsBadge.textContent = locations.length;
+                    }
+
+                    // ---- OCR ----
+                    ocrBody.innerHTML = '';
+                    const ocrData = data.ocr || [];
+                    if (ocrData.length === 0) {
+                        ocrBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">No text detected</td></tr>';
+                    } else {
+                        ocrData.forEach((item, idx) => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="num-col">${idx+1}</td>
+                                <td>${item.text}</td>
+                                <td class="coord">${item.coordinates}</td>
+                            `;
+                            ocrBody.appendChild(tr);
+                        });
+                    }
+                    ocrCount.textContent = ocrData.length + ' texts';
+
+                    // ---- EXIF ----
+                    const md = data.metadata || {};
+                    exifMake.textContent = md.Camera || '—';
+                    exifModel.textContent = md.Model || '—';
+                    exifLens.textContent = md.Lens || '—';
+                    exifDate.textContent = md.Date || '—';
+                    const gpsDecimal = data.gps_decimal || '—';
+                    exifGps.textContent = gpsDecimal;
+                    exifAlt.textContent = md.Altitude || '—';
+                    exifIso.textContent = md.ISO || '—';
+                    exifFocal.textContent = md.FocalLength || '—';
+                    exifAperture.textContent = md.Aperture || '—';
+                    exifShutter.textContent = md.ShutterSpeed || '—';
+                    exifDim.textContent = md.Dimensions || '—';
+
+                    // ---- Map Button ----
+                    const mapUrl = data.map_url || null;
+                    mapBtn.onclick = function() {
+                        if (mapUrl) {
+                            window.open(mapUrl, '_blank');
+                        } else {
+                            showToast('No GPS data to show on map.', true);
+                        }
+                    };
+
+                    // ---- Reverse Search Buttons ----
+                    const revData = data.reverse_search || [];
+                    searchButtons.innerHTML = '';
+                    if (revData.length === 0) {
+                        searchButtons.innerHTML = '<span style="color:var(--text-muted); font-size:13px;">No search engines available.</span>';
+                        reverseBadge.textContent = '0';
+                    } else {
+                        revData.forEach(item => {
+                            const btn = document.createElement('button');
+                            btn.className = 'search-btn';
+                            btn.innerHTML = `<i class="fas fa-search"></i> ${item.site}`;
+                            btn.onclick = function() {
+                                window.open(item.url, '_blank');
+                            };
+                            searchButtons.appendChild(btn);
+                        });
+                        reverseBadge.textContent = revData.length;
+                    }
+
+                    showToast('✅ Analysis complete!');
+                } else {
+                    setStatus('Error', 'Backend returned error');
+                    showToast('❌ ' + (data.error || 'Unknown error'), true);
+                }
+            } catch (error) {
+                setStatus('Error', 'Connection failed');
+                if (error.name === 'TimeoutError' || error.message.includes('Timeout')) {
+                    showToast('⏱️ Backend is waking up (cold start). Please wait 30s and try again.', true);
+                } else {
+                    showToast('❌ ' + error.message, true);
+                }
+                console.error('Scan Error:', error);
+            }
+        }
+
+        // ---- helpers ----
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // ---- event listeners ----
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) processFile(e.target.files[0]);
+            e.target.value = '';
+        });
+
+        const stage = document.getElementById('imageStage');
+        stage.addEventListener('dragover', (e) => { e.preventDefault(); stage.style.borderColor = 'var(--cyan)'; });
+        stage.addEventListener('dragleave', () => { stage.style.borderColor = ''; });
+        stage.addEventListener('drop', (e) => {
+            e.preventDefault();
+            stage.style.borderColor = '';
+            if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+        });
+
+        fullBtn.addEventListener('click', () => {
+            if (previewImg.src && previewImg.style.display !== 'none') {
+                modalImg.src = previewImg.src;
+                modal.classList.add('show');
+            } else {
+                showToast('Upload an image first.', true);
+            }
+        });
+        modalClose.addEventListener('click', () => modal.classList.remove('show'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.remove('show'); });
+
+        // ---- navigation ----
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                const target = item.dataset.target;
+                if (target === 'dashboard') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                const el = document.getElementById(target);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // ---- init ----
+        setStatus('Ready', 'Upload an image to begin');
+        showToast('VisionEye initialized. Upload an image to start analysis.');
+        console.log('🔗 Backend URL:', BACKEND_URL);
+
+    })();
+</script>
+
+</body>
+</html>
